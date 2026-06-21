@@ -1,0 +1,55 @@
+#!/usr/bin/env php
+<?php
+
+$binary = findBinary($argv[0]);
+
+if ($binary === null) {
+    fwrite(STDERR, "commit-linter-rs binary was not found on PATH.\n");
+    fwrite(STDERR, "Install the Rust CLI binary first or download it from GitHub Releases.\n");
+    exit(1);
+}
+
+$args = array_slice($argv, 1);
+$command = array_merge([$binary], $args);
+
+$descriptors = [
+    0 => STDIN,
+    1 => STDOUT,
+    2 => STDERR,
+];
+
+$process = @proc_open($command, $descriptors, $pipes);
+
+if (!is_resource($process)) {
+    fwrite(STDERR, "commit-linter-rs binary was not found on PATH.\n");
+    fwrite(STDERR, "Install the Rust CLI binary first or download it from GitHub Releases.\n");
+    exit(1);
+}
+
+$exitCode = proc_close($process);
+exit($exitCode);
+
+function findBinary(string $ownPath): ?string
+{
+    $ownRealPath = realpath($ownPath) ?: $ownPath;
+    $names = DIRECTORY_SEPARATOR === '\\'
+        ? ['commit-linter-rs.exe', 'commit-linter-rs.cmd', 'commit-linter-rs.bat']
+        : ['commit-linter-rs'];
+
+    foreach (explode(PATH_SEPARATOR, getenv('PATH') ?: '') as $directory) {
+        if ($directory === '') {
+            continue;
+        }
+
+        foreach ($names as $name) {
+            $candidate = $directory . DIRECTORY_SEPARATOR . $name;
+            $candidateRealPath = realpath($candidate);
+
+            if ($candidateRealPath !== false && is_executable($candidate) && $candidateRealPath !== $ownRealPath) {
+                return $candidate;
+            }
+        }
+    }
+
+    return null;
+}

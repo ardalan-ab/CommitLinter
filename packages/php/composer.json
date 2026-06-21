@@ -1,0 +1,12 @@
+{
+  "name": "vendor/commit-linter-rs",
+  "description": "Composer launcher for the commit-linter-rs Rust CLI",
+  "license": "MIT",
+  "type": "library",
+  "bin": [
+    "bin/commit-linter-rs"
+  ],
+  "require": {
+    "php": ">=8.0"
+  }
+}

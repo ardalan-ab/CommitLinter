@@ -1,0 +1,16 @@
+{
+  "name": "commit-linter-rs",
+  "version": "0.1.0",
+  "description": "Node.js launcher for the commit-linter-rs Rust CLI",
+  "license": "MIT",
+  "bin": {
+    "commit-linter-rs": "bin/commit-linter-rs.js"
+  },
+  "files": [
+    "bin",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=14"
+  }
+}

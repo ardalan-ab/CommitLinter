@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/commit-linter-cli"]
+resolver = "2"

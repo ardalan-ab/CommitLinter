@@ -1,0 +1,5 @@
+/target
+**/bin/Debug/
+**/bin/Release/
+**/obj/
+.DS_Store

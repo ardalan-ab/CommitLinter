@@ -1,0 +1,2 @@
+#!/bin/sh
+commit-linter-rs lint --edit "$1"
