@@ -1,52 +1,116 @@
 use crate::config::Config;
 use crate::parser::CommitHeader;
 
-pub fn validate(header: &str, parsed: Option<&CommitHeader>, config: &Config) -> Vec<String> {
-    let mut errors = Vec::new();
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LintError {
+    pub rule: &'static str,
+    pub message: String,
+    pub help: &'static str,
+}
 
-    if header.chars().count() > config.max_header_length {
-        errors.push(format!(
-            "header must be at most {} characters",
-            config.max_header_length
+impl LintError {
+    fn new(rule: &'static str, message: impl Into<String>, help: &'static str) -> Self {
+        Self {
+            rule,
+            message: message.into(),
+            help,
+        }
+    }
+}
+
+pub fn validate(header: &str, parsed: Option<&CommitHeader>, config: &Config) -> Vec<LintError> {
+    let mut errors = Vec::new();
+    let rules = &config.rules;
+
+    if rules.header_max_length && header.chars().count() > config.max_header_length {
+        errors.push(LintError::new(
+            "header-max-length",
+            format!(
+                "header must be at most {} characters",
+                config.max_header_length
+            ),
+            "Shorten the first line of the commit message.",
         ));
     }
 
     let Some(parsed) = parsed else {
-        errors.push("message must match 'type: subject' or 'type(scope): subject'".into());
+        if rules.header_format {
+            errors.push(LintError::new(
+                "header-format",
+                "message must match 'type: subject' or 'type(scope): subject'",
+                "Use a Conventional Commit header like 'feat(auth): add login'.",
+            ));
+        }
         return errors;
     };
 
-    if parsed.commit_type.trim().is_empty() {
-        errors.push("type is required".into());
+    if rules.type_required && parsed.commit_type.trim().is_empty() {
+        errors.push(LintError::new(
+            "type-required",
+            "type is required",
+            "Start the message with a type such as 'feat' or 'fix'.",
+        ));
     }
 
-    if parsed.commit_type != parsed.commit_type.to_lowercase() {
-        errors.push("type must be lowercase".into());
+    if rules.type_lowercase && parsed.commit_type != parsed.commit_type.to_lowercase() {
+        errors.push(LintError::new(
+            "type-lowercase",
+            "type must be lowercase",
+            "Use 'feat' instead of 'Feat'.",
+        ));
     }
 
-    if !config
-        .types
-        .iter()
-        .any(|allowed| allowed == &parsed.commit_type)
+    if rules.type_allowed
+        && !config
+            .types
+            .iter()
+            .any(|allowed| allowed == &parsed.commit_type)
     {
-        errors.push(format!("type must be one of: {}", config.types.join(", ")));
+        errors.push(LintError::new(
+            "type-allowed",
+            format!("type must be one of: {}", config.types.join(", ")),
+            "Add the type to commit-linter.toml or use one of the allowed types.",
+        ));
     }
 
-    if parsed.subject.trim().is_empty() {
-        errors.push("subject is required".into());
+    if rules.subject_required && parsed.subject.trim().is_empty() {
+        errors.push(LintError::new(
+            "subject-required",
+            "subject is required",
+            "Add a short description after ': '.",
+        ));
     }
 
     match parsed.scope.as_deref() {
-        Some("") => errors.push("scope must not be empty".into()),
+        Some("") if rules.scope_not_empty => errors.push(LintError::new(
+            "scope-not-empty",
+            "scope must not be empty",
+            "Remove the empty parentheses or add a scope name.",
+        )),
         Some(scope) => {
-            if config.scope_no_spaces && scope.chars().any(char::is_whitespace) {
-                errors.push("scope must not contain spaces".into());
+            if rules.scope_no_spaces
+                && config.scope_no_spaces
+                && scope.chars().any(char::is_whitespace)
+            {
+                errors.push(LintError::new(
+                    "scope-no-spaces",
+                    "scope must not contain spaces",
+                    "Use a compact scope such as 'auth-flow' or 'auth'.",
+                ));
             }
-            if config.scope_lowercase && scope != scope.to_lowercase() {
-                errors.push("scope must be lowercase".into());
+            if rules.scope_lowercase && config.scope_lowercase && scope != scope.to_lowercase() {
+                errors.push(LintError::new(
+                    "scope-lowercase",
+                    "scope must be lowercase",
+                    "Use 'auth' instead of 'Auth'.",
+                ));
             }
         }
-        None if config.scope_required => errors.push("scope is required".into()),
+        None if rules.scope_required && config.scope_required => errors.push(LintError::new(
+            "scope-required",
+            "scope is required",
+            "Add a scope, for example 'feat(auth): add login'.",
+        )),
         None => {}
     }
 
@@ -58,9 +122,13 @@ mod tests {
     use super::*;
     use crate::parser::parse_header;
 
-    fn lint(header: &str, config: &Config) -> Vec<String> {
+    fn lint(header: &str, config: &Config) -> Vec<LintError> {
         let parsed = parse_header(header);
         validate(header, parsed.as_ref(), config)
+    }
+
+    fn has_message(errors: &[LintError], message: &str) -> bool {
+        errors.iter().any(|error| error.message == message)
     }
 
     #[test]
@@ -76,7 +144,7 @@ mod tests {
     #[test]
     fn invalid_uppercase_type() {
         let errors = lint("Feat(auth): add login", &Config::default());
-        assert!(errors.contains(&"type must be lowercase".to_string()));
+        assert!(has_message(&errors, "type must be lowercase"));
     }
 
     #[test]
@@ -84,26 +152,28 @@ mod tests {
         let errors = lint("feature(auth): add login", &Config::default());
         assert!(errors
             .iter()
-            .any(|error| error.starts_with("type must be one of")));
+            .any(|error| error.message.starts_with("type must be one of")));
     }
 
     #[test]
     fn empty_subject() {
         let errors = lint("feat:", &Config::default());
-        assert!(errors
-            .contains(&"message must match 'type: subject' or 'type(scope): subject'".to_string()));
+        assert!(has_message(
+            &errors,
+            "message must match 'type: subject' or 'type(scope): subject'"
+        ));
     }
 
     #[test]
     fn scope_with_space() {
         let errors = lint("feat(auth flow): add login", &Config::default());
-        assert!(errors.contains(&"scope must not contain spaces".to_string()));
+        assert!(has_message(&errors, "scope must not contain spaces"));
     }
 
     #[test]
     fn empty_scope() {
         let errors = lint("fix(): bad scope", &Config::default());
-        assert!(errors.contains(&"scope must not be empty".to_string()));
+        assert!(has_message(&errors, "scope must not be empty"));
     }
 
     #[test]
@@ -112,7 +182,7 @@ mod tests {
         config.max_header_length = 10;
 
         let errors = lint("fix: this header is too long", &config);
-        assert!(errors.contains(&"header must be at most 10 characters".to_string()));
+        assert!(has_message(&errors, "header must be at most 10 characters"));
     }
 
     #[test]
@@ -129,6 +199,14 @@ mod tests {
         config.scope_required = true;
 
         let errors = lint("feat: add login", &config);
-        assert!(errors.contains(&"scope is required".to_string()));
+        assert!(has_message(&errors, "scope is required"));
+    }
+
+    #[test]
+    fn disabled_rule_does_not_report_error() {
+        let mut config = Config::default();
+        config.rules.type_allowed = false;
+
+        assert!(lint("wip: sketch first pass", &config).is_empty());
     }
 }

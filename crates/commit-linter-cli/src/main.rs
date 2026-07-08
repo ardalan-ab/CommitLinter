@@ -120,5 +120,11 @@ fn install_hook() -> Result<()> {
     }
 
     println!("Installed Git commit-msg hook at {}", hook_path.display());
+    let created_config = init_config()?;
+    if created_config {
+        println!("Created commit-linter.toml");
+    } else {
+        println!("commit-linter.toml already exists");
+    }
     Ok(())
 }

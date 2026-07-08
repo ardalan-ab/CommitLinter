@@ -13,6 +13,53 @@ pub struct Config {
     pub scope_no_spaces: bool,
     pub scope_lowercase: bool,
     pub types: Vec<String>,
+    #[serde(default)]
+    pub rules: RulesConfig,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+pub struct RulesConfig {
+    #[serde(default = "enabled")]
+    pub header_format: bool,
+    #[serde(default = "enabled")]
+    pub header_max_length: bool,
+    #[serde(default = "enabled")]
+    pub type_required: bool,
+    #[serde(default = "enabled")]
+    pub type_lowercase: bool,
+    #[serde(default = "enabled")]
+    pub type_allowed: bool,
+    #[serde(default = "enabled")]
+    pub subject_required: bool,
+    #[serde(default = "enabled")]
+    pub scope_not_empty: bool,
+    #[serde(default = "enabled")]
+    pub scope_no_spaces: bool,
+    #[serde(default = "enabled")]
+    pub scope_lowercase: bool,
+    #[serde(default = "enabled")]
+    pub scope_required: bool,
+}
+
+fn enabled() -> bool {
+    true
+}
+
+impl Default for RulesConfig {
+    fn default() -> Self {
+        Self {
+            header_format: true,
+            header_max_length: true,
+            type_required: true,
+            type_lowercase: true,
+            type_allowed: true,
+            subject_required: true,
+            scope_not_empty: true,
+            scope_no_spaces: true,
+            scope_lowercase: true,
+            scope_required: true,
+        }
+    }
 }
 
 impl Default for Config {
@@ -35,6 +82,7 @@ impl Default for Config {
                 "chore".into(),
                 "revert".into(),
             ],
+            rules: RulesConfig::default(),
         }
     }
 }

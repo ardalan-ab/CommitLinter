@@ -6,7 +6,7 @@ Many teams like the commitlint workflow, but Python, PHP, .NET, Rust, and other 
 
 ## Status
 
-This is an MVP. The wrappers expect the Rust binary to be available on `PATH`. Future versions can download platform-specific binaries automatically during package installation.
+This is an MVP. Wrappers are designed to be project-local and can bundle platform-specific native binaries. The current checked-in binary is Linux x64; publish additional platform binaries for macOS, Windows, and Linux ARM before a full multi-platform registry release.
 
 ## Install The Rust CLI
 
@@ -44,6 +44,8 @@ Install a `commit-msg` hook:
 commit-linter-rs install
 ```
 
+The install command also creates `commit-linter.toml` if it does not already exist.
+
 The hook runs:
 
 ```sh
@@ -56,17 +58,22 @@ Node.js:
 
 ```sh
 npm install -D commit-linter-rs
-npx commit-linter-rs install
 npx commit-linter-rs lint --message "feat(auth): add login"
 ```
+
+The npm package creates `commit-linter.toml` and installs a project-local `commit-msg` hook during package installation when the project has a `.git` directory. The hook calls `./node_modules/.bin/commit-linter-rs`, so it does not depend on a global OS command.
 
 Python:
 
 ```sh
+python -m venv .venv
+. .venv/bin/activate
 pip install commit-linter-rs
 commit-linter-rs install
 commit-linter-rs lint --message "feat(auth): add login"
 ```
+
+Run `install` from the project virtual environment so the hook points to the project-local launcher.
 
 PHP Composer:
 
@@ -79,14 +86,15 @@ vendor/bin/commit-linter-rs lint --message "feat(auth): add login"
 .NET:
 
 ```sh
-dotnet tool install --global CommitLinterRs
-commit-linter-rs install
-commit-linter-rs lint --message "feat(auth): add login"
+dotnet new tool-manifest
+dotnet tool install commit-linter-rs
+dotnet tool run commit-linter-rs install
+dotnet tool run commit-linter-rs lint --message "feat(auth): add login"
 ```
 
 ## Configuration
 
-The CLI looks for `commit-linter.toml` in the current working directory. If it does not exist, defaults are used.
+The CLI looks for `commit-linter.toml` in the current working directory. If it does not exist, defaults are used. See [docs/configuration.md](docs/configuration.md) for every property and rule.
 
 ```toml
 max_header_length = 100
@@ -107,7 +115,30 @@ types = [
   "chore",
   "revert",
 ]
+
+[rules]
+header_format = true
+header_max_length = true
+type_required = true
+type_lowercase = true
+type_allowed = true
+subject_required = true
+scope_not_empty = true
+scope_no_spaces = true
+scope_lowercase = true
+scope_required = true
 ```
+
+Set any rule to `false` to disable that check. For example, to allow custom commit types without editing the `types` list:
+
+```toml
+[rules]
+type_allowed = false
+```
+
+## Local Package Testing
+
+See [docs/local-testing.md](docs/local-testing.md) to test unpublished npm, Python, Composer, and .NET packages in real projects.
 
 ## Commit Format
 
@@ -166,8 +197,8 @@ commit-linter-rs install
 
 ## Roadmap
 
-- Publish prebuilt binaries for Linux, macOS, and Windows.
-- Add automatic binary download logic to wrappers.
+- Publish prebuilt binaries for Linux, macOS, Windows, and ARM platforms.
+- Split native binaries into platform-specific packages or add automatic binary download logic.
 - Support more Conventional Commit rules.
 - Add JSON output for CI integrations.
 - Add config discovery up the directory tree.

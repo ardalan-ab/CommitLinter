@@ -1,6 +1,6 @@
 {
   "name": "vendor/commit-linter-rs",
-  "description": "Composer launcher for the commit-linter-rs Rust CLI",
+  "description": "Project-local Composer launcher for the commit-linter-rs Rust CLI",
   "license": "MIT",
   "type": "library",
   "bin": [

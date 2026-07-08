@@ -1,15 +1,72 @@
 #!/usr/bin/env php
 <?php
 
-$binary = findBinary($argv[0]);
+const CONFIG_FILE = 'commit-linter.toml';
+const HOOK_START = '# commit-linter-rs start';
+const HOOK_END = '# commit-linter-rs end';
+const LEGACY_HOOK_BLOCK = 'commit-linter-rs lint --edit "$1"';
+
+const DEFAULT_CONFIG = <<<'TOML'
+max_header_length = 100
+scope_required = false
+scope_no_spaces = true
+scope_lowercase = true
+types = [
+    "feat",
+    "fix",
+    "docs",
+    "style",
+    "refactor",
+    "perf",
+    "test",
+    "build",
+    "ci",
+    "chore",
+    "revert",
+]
+
+[rules]
+header_format = true
+header_max_length = true
+type_required = true
+type_lowercase = true
+type_allowed = true
+subject_required = true
+scope_not_empty = true
+scope_no_spaces = true
+scope_lowercase = true
+scope_required = true
+TOML;
+
+$args = array_slice($argv, 1);
+
+if (($args[0] ?? null) === 'init') {
+    $created = initProject(getcwd());
+    echo $created ? "Created commit-linter.toml\n" : "commit-linter.toml already exists\n";
+    exit(0);
+}
+
+if (($args[0] ?? null) === 'install') {
+    $hookStatus = installHook(getcwd(), launcherCommand(getcwd(), $argv[0]));
+    if ($hookStatus === 'no-git') {
+        fwrite(STDERR, "error: could not find .git directory in the current working directory\n");
+        exit(1);
+    }
+
+    echo "Installed project-local Git commit-msg hook at .git/hooks/commit-msg\n";
+    $created = initProject(getcwd());
+    echo $created ? "Created commit-linter.toml\n" : "commit-linter.toml already exists\n";
+    exit(0);
+}
+
+$binary = findBinary();
 
 if ($binary === null) {
-    fwrite(STDERR, "commit-linter-rs binary was not found on PATH.\n");
-    fwrite(STDERR, "Install the Rust CLI binary first or download it from GitHub Releases.\n");
+    fwrite(STDERR, "commit-linter-rs native binary was not found in this Composer package.\n");
+    fwrite(STDERR, "Reinstall the package or use a release that includes your platform binary.\n");
     exit(1);
 }
 
-$args = array_slice($argv, 1);
 $command = array_merge([$binary], $args);
 
 $descriptors = [
@@ -21,35 +78,123 @@ $descriptors = [
 $process = @proc_open($command, $descriptors, $pipes);
 
 if (!is_resource($process)) {
-    fwrite(STDERR, "commit-linter-rs binary was not found on PATH.\n");
-    fwrite(STDERR, "Install the Rust CLI binary first or download it from GitHub Releases.\n");
+    fwrite(STDERR, "commit-linter-rs native binary was not found in this Composer package.\n");
     exit(1);
 }
 
 $exitCode = proc_close($process);
 exit($exitCode);
 
-function findBinary(string $ownPath): ?string
+function initProject(string $projectRoot): bool
+{
+    $configPath = $projectRoot . DIRECTORY_SEPARATOR . CONFIG_FILE;
+    if (file_exists($configPath)) {
+        return false;
+    }
+
+    file_put_contents($configPath, DEFAULT_CONFIG);
+    return true;
+}
+
+function installHook(string $projectRoot, string $command): string
+{
+    $gitDir = $projectRoot . DIRECTORY_SEPARATOR . '.git';
+    if (!is_dir($gitDir)) {
+        return 'no-git';
+    }
+
+    $hooksDir = $gitDir . DIRECTORY_SEPARATOR . 'hooks';
+    if (!is_dir($hooksDir)) {
+        mkdir($hooksDir, 0777, true);
+    }
+
+    $hookPath = $hooksDir . DIRECTORY_SEPARATOR . 'commit-msg';
+    $hookBlock = HOOK_START . "\n"
+        . "PROJECT_ROOT=\"\$(dirname \"\$0\")/../..\"\n"
+        . "cd \"\$PROJECT_ROOT\"\n"
+        . $command . " lint --edit \"\$1\"\n"
+        . HOOK_END . "\n";
+
+    file_put_contents($hookPath, mergeHook(readFileIfExists($hookPath), $hookBlock));
+    chmod($hookPath, 0755);
+
+    return 'installed';
+}
+
+function launcherCommand(string $projectRoot, string $ownPath): string
 {
     $ownRealPath = realpath($ownPath) ?: $ownPath;
-    $names = DIRECTORY_SEPARATOR === '\\'
-        ? ['commit-linter-rs.exe', 'commit-linter-rs.cmd', 'commit-linter-rs.bat']
-        : ['commit-linter-rs'];
+    $projectRealPath = realpath($projectRoot) ?: $projectRoot;
 
-    foreach (explode(PATH_SEPARATOR, getenv('PATH') ?: '') as $directory) {
-        if ($directory === '') {
-            continue;
-        }
+    if (str_starts_with($ownRealPath, $projectRealPath . DIRECTORY_SEPARATOR)) {
+        $relative = substr($ownRealPath, strlen($projectRealPath) + 1);
+        return './' . str_replace(DIRECTORY_SEPARATOR, '/', $relative);
+    }
 
-        foreach ($names as $name) {
-            $candidate = $directory . DIRECTORY_SEPARATOR . $name;
-            $candidateRealPath = realpath($candidate);
+    return 'vendor/bin/commit-linter-rs';
+}
 
-            if ($candidateRealPath !== false && is_executable($candidate) && $candidateRealPath !== $ownRealPath) {
-                return $candidate;
-            }
-        }
+function mergeHook(?string $existingHook, string $hookBlock): string
+{
+    if ($existingHook === null) {
+        return "#!/bin/sh\n" . $hookBlock;
+    }
+
+    $cleaned = removeManagedBlock($existingHook);
+    $cleaned = str_replace(LEGACY_HOOK_BLOCK, '', $cleaned);
+    $cleaned = rtrim($cleaned);
+
+    return $cleaned . "\n\n" . $hookBlock;
+}
+
+function removeManagedBlock(string $hook): string
+{
+    $start = strpos($hook, HOOK_START);
+    $end = strpos($hook, HOOK_END);
+    if ($start === false || $end === false || $end < $start) {
+        return $hook;
+    }
+
+    return substr($hook, 0, $start) . substr($hook, $end + strlen(HOOK_END));
+}
+
+function readFileIfExists(string $path): ?string
+{
+    if (!file_exists($path)) {
+        return null;
+    }
+
+    return file_get_contents($path);
+}
+
+function findBinary(): ?string
+{
+    $configuredBinary = getenv('COMMIT_LINTER_RS_BIN') ?: null;
+    if ($configuredBinary !== null && is_executable($configuredBinary)) {
+        return $configuredBinary;
+    }
+
+    $bundledBinary = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'vendor-bin' . DIRECTORY_SEPARATOR . bundledBinaryName();
+    if (is_executable($bundledBinary)) {
+        return $bundledBinary;
     }
 
     return null;
+}
+
+function bundledBinaryName(): string
+{
+    $os = PHP_OS_FAMILY;
+    $machine = strtolower(php_uname('m'));
+    $arch = in_array($machine, ['x86_64', 'amd64'], true) ? 'x64' : $machine;
+
+    if ($os === 'Darwin') {
+        return 'commit-linter-rs-macos-' . $arch;
+    }
+
+    if ($os === 'Windows') {
+        return 'commit-linter-rs-windows-' . $arch . '.exe';
+    }
+
+    return 'commit-linter-rs-linux-' . $arch;
 }

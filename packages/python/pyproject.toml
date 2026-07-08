@@ -5,10 +5,14 @@ build-backend = "hatchling.build"
 [project]
 name = "commit-linter-rs"
 version = "0.1.0"
-description = "Python launcher for the commit-linter-rs Rust CLI"
+description = "Project-local Python launcher for the commit-linter-rs Rust CLI"
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
 
 [project.scripts]
 commit-linter-rs = "commit_linter_rs.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["commit_linter_rs"]
+artifacts = ["commit_linter_rs/vendor/*"]

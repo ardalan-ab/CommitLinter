@@ -16,3 +16,15 @@ types = [
   "chore",
   "revert",
 ]
+
+[rules]
+header_format = true
+header_max_length = true
+type_required = true
+type_lowercase = true
+type_allowed = true
+subject_required = true
+scope_not_empty = true
+scope_no_spaces = true
+scope_lowercase = true
+scope_required = true

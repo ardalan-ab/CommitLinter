@@ -3,3 +3,6 @@
 **/bin/Release/
 **/obj/
 .DS_Store
+.npm-cache/
+.pip-cache/
+.venv/

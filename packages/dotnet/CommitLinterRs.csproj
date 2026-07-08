@@ -6,10 +6,13 @@
     <Nullable>enable</Nullable>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>commit-linter-rs</ToolCommandName>
-    <PackageId>CommitLinterRs</PackageId>
+    <PackageId>commit-linter-rs</PackageId>
     <Version>0.1.0</Version>
     <Authors>commit-linter-rs contributors</Authors>
     <Description>.NET tool launcher for the commit-linter-rs Rust CLI</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
+  <ItemGroup>
+    <Content Include="vendor/**" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="tools/net8.0/any/vendor" />
+  </ItemGroup>
 </Project>
