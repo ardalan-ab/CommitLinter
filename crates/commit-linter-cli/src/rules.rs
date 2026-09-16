@@ -178,8 +178,10 @@ mod tests {
 
     #[test]
     fn header_too_long() {
-        let mut config = Config::default();
-        config.max_header_length = 10;
+        let config = Config {
+            max_header_length: 10,
+            ..Config::default()
+        };
 
         let errors = lint("fix: this header is too long", &config);
         assert!(has_message(&errors, "header must be at most 10 characters"));
@@ -195,8 +197,10 @@ mod tests {
 
     #[test]
     fn scope_required_true() {
-        let mut config = Config::default();
-        config.scope_required = true;
+        let config = Config {
+            scope_required: true,
+            ..Config::default()
+        };
 
         let errors = lint("feat: add login", &config);
         assert!(has_message(&errors, "scope is required"));
