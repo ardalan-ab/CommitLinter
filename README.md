@@ -2,11 +2,14 @@
 
 `commit-linter-rs` is a universal commit message linter powered by Rust. It validates Conventional Commit headers without requiring every project to install Node.js.
 
-Many teams like the commitlint workflow, but Python, PHP, .NET, Rust, and other non-Node projects should not need a JavaScript toolchain just to run a Git hook. This project keeps the linter engine in a native Rust CLI and provides ecosystem-friendly wrappers that delegate to that same binary.
+Many teams like the commitlint workflow, but Python, PHP, .NET, Flutter, Rust, and other non-Node projects should not need a JavaScript toolchain just to run a Git hook. This project keeps the linter engine in a native Rust CLI and provides ecosystem-friendly wrappers that delegate to that same binary.
 
 ## Status
 
-This is an MVP. Wrappers are designed to be project-local and can bundle platform-specific native binaries. The current checked-in binary is Linux x64; publish additional platform binaries for macOS, Windows, and Linux ARM before a full multi-platform registry release.
+This is an MVP. Wrappers are designed to be project-local and bundle
+platform-specific native binaries. The checked-in development binary is Linux
+x64; the release workflow builds Linux x64/ARM64, macOS x64/ARM64, and Windows
+x64 binaries before packaging the registry releases.
 
 ## Install The Rust CLI
 
@@ -78,7 +81,7 @@ Run `install` from the project virtual environment so the hook points to the pro
 PHP Composer:
 
 ```sh
-composer require --dev vendor/commit-linter-rs
+composer require --dev ardalan-ab/commit-linter-rs
 vendor/bin/commit-linter-rs install
 vendor/bin/commit-linter-rs lint --message "feat(auth): add login"
 ```
@@ -90,6 +93,14 @@ dotnet new tool-manifest
 dotnet tool install commit-linter-rs
 dotnet tool run commit-linter-rs install
 dotnet tool run commit-linter-rs lint --message "feat(auth): add login"
+```
+
+Flutter / Dart:
+
+```sh
+flutter pub add --dev commit_linter_rs
+dart run commit_linter_rs install
+dart run commit_linter_rs lint --message "feat(auth): add login"
 ```
 
 ## Configuration
@@ -135,6 +146,11 @@ Set any rule to `false` to disable that check. For example, to allow custom comm
 [rules]
 type_allowed = false
 ```
+
+## Releasing
+
+See [docs/releasing.md](docs/releasing.md) for the multi-platform registry
+release checklist and GitHub Actions setup.
 
 ## Local Package Testing
 

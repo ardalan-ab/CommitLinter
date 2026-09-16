@@ -1,8 +1,14 @@
 {
-  "name": "vendor/commit-linter-rs",
+  "name": "ardalan-ab/commit-linter-rs",
   "description": "Project-local Composer launcher for the commit-linter-rs Rust CLI",
   "license": "MIT",
   "type": "library",
+  "homepage": "https://github.com/ardalan-ab/CommitLinter",
+  "keywords": ["commit", "lint", "conventional-commits", "git-hook", "rust"],
+  "support": {
+    "issues": "https://github.com/ardalan-ab/CommitLinter/issues",
+    "source": "https://github.com/ardalan-ab/CommitLinter"
+  },
   "bin": [
     "bin/commit-linter-rs"
   ],

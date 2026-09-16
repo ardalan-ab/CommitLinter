@@ -2,6 +2,14 @@
   "name": "commit-linter-rs",
   "version": "0.1.0",
   "description": "Project-local Node.js launcher for the commit-linter-rs Rust CLI",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ardalan-ab/CommitLinter.git",
+    "directory": "packages/node"
+  },
+  "homepage": "https://github.com/ardalan-ab/CommitLinter#readme",
+  "bugs": "https://github.com/ardalan-ab/CommitLinter/issues",
+  "keywords": ["commit", "lint", "conventional-commits", "git-hook", "rust"],
   "license": "MIT",
   "bin": {
     "commit-linter-rs": "bin/commit-linter-rs.js"
@@ -13,7 +21,8 @@
     "bin",
     "scripts",
     "vendor",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=14"

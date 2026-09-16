@@ -1,0 +1,16 @@
+name: commit_linter_rs
+version: 0.1.0
+description: Project-local Dart and Flutter launcher for the commit-linter-rs Rust CLI.
+repository: https://github.com/ardalan-ab/CommitLinter
+homepage: https://github.com/ardalan-ab/CommitLinter
+issue_tracker: https://github.com/ardalan-ab/CommitLinter/issues
+topics:
+  - conventional-commits
+  - git-hooks
+  - linter
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+executables:
+  commit_linter_rs: commit_linter_rs

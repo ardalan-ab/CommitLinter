@@ -15,10 +15,12 @@ cp target/release/commit-linter-rs packages/node/vendor/commit-linter-rs-linux-x
 cp target/release/commit-linter-rs packages/python/commit_linter_rs/vendor/commit-linter-rs-linux-x64
 cp target/release/commit-linter-rs packages/php/vendor-bin/commit-linter-rs-linux-x64
 cp target/release/commit-linter-rs packages/dotnet/vendor/commit-linter-rs-linux-x64
+cp target/release/commit-linter-rs packages/flutter/lib/vendor/commit-linter-rs-linux-x64
 chmod +x packages/node/vendor/commit-linter-rs-linux-x64
 chmod +x packages/python/commit_linter_rs/vendor/commit-linter-rs-linux-x64
 chmod +x packages/php/vendor-bin/commit-linter-rs-linux-x64
 chmod +x packages/dotnet/vendor/commit-linter-rs-linux-x64
+chmod +x packages/flutter/lib/vendor/commit-linter-rs-linux-x64
 ```
 
 ## Node.js
@@ -94,6 +96,26 @@ dotnet tool run commit-linter-rs install
 ```
 
 The hook uses `dotnet tool run commit-linter-rs`, so it stays scoped to projects with a local tool manifest.
+
+## Flutter / Dart
+
+From a test Flutter project, add the local package:
+
+```yaml
+dev_dependencies:
+  commit_linter_rs:
+    path: /path/to/commitlinter/packages/flutter
+```
+
+Then run:
+
+```sh
+flutter pub get
+dart run commit_linter_rs install
+dart run commit_linter_rs lint --message "feat(auth): add login"
+```
+
+The hook invokes the project-local Dart package executable.
 
 ## Quick Checks
 

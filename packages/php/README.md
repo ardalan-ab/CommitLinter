@@ -3,7 +3,7 @@
 Project-local Composer launcher for the `commit-linter-rs` Rust CLI.
 
 ```sh
-composer require --dev vendor/commit-linter-rs
+composer require --dev ardalan-ab/commit-linter-rs
 vendor/bin/commit-linter-rs install
 vendor/bin/commit-linter-rs lint --message "feat(auth): add login"
 ```
