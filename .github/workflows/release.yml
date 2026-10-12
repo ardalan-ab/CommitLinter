@@ -97,7 +97,13 @@ jobs:
           bash scripts/check-release.sh "$VERSION"
       - run: python -m build packages/python
       - run: python -m twine check packages/python/dist/*
-      - run: cd packages/flutter && dart pub get && dart analyze && dart pub publish --dry-run
+      - name: Validate Dart package
+        run: |
+          cp -a packages/flutter "$RUNNER_TEMP/flutter"
+          cd "$RUNNER_TEMP/flutter"
+          dart pub get
+          dart analyze
+          dart pub publish --dry-run
       - run: mkdir -p packages/node/dist && npm pack ./packages/node --pack-destination packages/node/dist
       - name: Build Composer archive
         run: tar -C packages/php -czf packages/php/commit-linter-rs-$VERSION.tar.gz .
