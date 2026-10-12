@@ -107,6 +107,8 @@ dart run commit_linter_rs lint --message "feat(auth): add login"
 
 The CLI looks for `commit-linter.toml` in the current working directory. If it does not exist, defaults are used. See [docs/configuration.md](docs/configuration.md) for every property and rule.
 
+For a repository with multiple language stacks, see [docs/monorepos.md](docs/monorepos.md) for root-level installation and current limits.
+
 ```toml
 max_header_length = 100
 scope_required = false

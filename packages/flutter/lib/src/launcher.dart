@@ -88,7 +88,7 @@ Future<int> run(List<String> arguments) async {
       arguments,
       mode: ProcessStartMode.inheritStdio,
     );
-    return process.exitCode;
+    return await process.exitCode;
   } on ProcessException catch (error) {
     stderr.writeln(error.message);
     return 1;

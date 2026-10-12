@@ -1,8 +1,14 @@
 # First release checklist
 
-The supported first-release targets are npm, PyPI, Composer/Packagist, and
-pub.dev. Native binaries are built for Linux x64, Linux ARM64, macOS x64,
-macOS ARM64, and Windows x64.
+Do not push a release tag yet. The current tag workflow publishes to npm,
+PyPI, and pub.dev immediately after creating the GitHub release. Those
+registries need their publisher accounts configured first. pub.dev also
+requires its first version to be published interactively, so the workflow
+must be adjusted to avoid trying to publish that same version again.
+
+The automated targets are npm, PyPI, and pub.dev. Composer/Packagist and
+NuGet require separate publication. Native binaries are built for Linux x64,
+Linux ARM64, macOS x64, macOS ARM64, and Windows x64.
 
 ## 1. Create registry accounts and reserve names
 
@@ -10,6 +16,7 @@ macOS ARM64, and Windows x64.
 - PyPI project: `commit-linter-rs`
 - pub.dev package: `commit_linter_rs`
 - Packagist package: `ardalan-ab/commit-linter-rs`
+- NuGet tool: `commit-linter-rs`
 
 Search each registry immediately before publishing. Search-engine results are
 not proof that a name is available; the registry is authoritative.
@@ -50,13 +57,14 @@ Use one version in all of these files:
 - `packages/node/package.json`
 - `packages/python/pyproject.toml`
 - `packages/flutter/pubspec.yaml`
+- `packages/dotnet/CommitLinterRs.csproj`
 
 Composer gets its version from the Git tag. The release tag must be the same
 version prefixed by `v`, for example `v0.1.0`.
 
 ## 5. Validate before publishing
 
-Run the release workflow manually with `publish` disabled. Download the
+Run the release workflow manually. Download the
 `registry-packages` artifact and verify:
 
 - every wrapper contains all five native binaries;
@@ -74,8 +82,9 @@ commit that passed these checks.
 
 ## 6. Publish the first version
 
-1. Publish `packages/flutter` interactively if pub.dev requires ownership to
-   be established first: `dart pub publish`.
+1. Publish `packages/flutter` interactively to establish pub.dev ownership:
+   `dart pub publish`. Before pushing the tag, adjust the workflow so it does
+   not attempt to republish that same version.
 2. Push the Composer package contents to its split repository.
 3. Create and push the release tag:
    `git tag -a v0.1.0 -m "Release v0.1.0"` then `git push origin v0.1.0`.
@@ -83,8 +92,9 @@ commit that passed these checks.
 5. Tag the same version in the Composer split repository.
 
 The tag starts `.github/workflows/release.yml`, which builds native binaries,
-checks and packages every wrapper, creates a GitHub release, and publishes npm,
-PyPI, and pub.dev.
+checks and packages the wrappers, creates a GitHub release, and attempts to
+publish npm, PyPI, and pub.dev. It does not publish the .NET tool or submit
+the Composer package to Packagist.
 
 ## 7. Verify after publishing
 

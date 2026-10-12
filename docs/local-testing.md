@@ -65,7 +65,7 @@ Use a path repository in the test project's `composer.json`:
     }
   ],
   "require-dev": {
-    "vendor/commit-linter-rs": "*"
+    "ardalan-ab/commit-linter-rs": "*"
   }
 }
 ```
@@ -73,7 +73,7 @@ Use a path repository in the test project's `composer.json`:
 Then run:
 
 ```sh
-composer update vendor/commit-linter-rs
+composer update ardalan-ab/commit-linter-rs
 vendor/bin/commit-linter-rs install
 ```
 
