@@ -106,7 +106,9 @@ jobs:
           dart pub publish --dry-run
       - run: mkdir -p packages/node/dist && npm pack ./packages/node --pack-destination packages/node/dist
       - name: Build Composer archive
-        run: tar -C packages/php -czf packages/php/commit-linter-rs-$VERSION.tar.gz .
+        run: |
+          tar -C packages/php -czf "$RUNNER_TEMP/commit-linter-rs-$VERSION.tar.gz" .
+          mv "$RUNNER_TEMP/commit-linter-rs-$VERSION.tar.gz" packages/php/
       - uses: actions/upload-artifact@v4
         with:
           name: registry-packages
